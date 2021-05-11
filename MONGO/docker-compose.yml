@@ -1,0 +1,21 @@
+version: '3.7'
+
+services:
+    mongodb_api:
+        image: mongo:latest
+        container_name: mongodb
+        restart: always
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: labaggregator 
+            MONGO_INITDB_ROOT_PASSWORD: password
+            MONGO_INITDB_DATABASE: vendorbotdb
+        ports:
+            - 27018:27017 # binds to docker internal service to localhost:27017
+        volumes:
+            - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # basic initialization of docker user and db with .js config file
+            - mongodb_api:/data/db
+            # shorten logs
+        command: mongod --quiet --logpath /dev/null # логи монго выключены насовсем
+
+volumes:
+    mongodb_api:

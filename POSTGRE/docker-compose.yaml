@@ -24,16 +24,14 @@ services:
     build:
       context: ./driver_service
       dockerfile: Dockerfile.python-3.8-slim
-    restart: always
-    volumes:         # docker run -v
-      - ".\\driver_service\\jupyter_scripts:/home" # интерактивно менять скрипты не перезапуская контейнер
+    # restart: always
     ports: 
       - 8888:8888 # binds docker internal service to localhost:8888
     # /wait-for-it.sh checks availability of service on some port, and then launches next command      cd /home && jupyter-notebook --ip=0.0.0.0 --allow-root'
-    command: bash -c '/wait-for-it.sh -h postgredb_service -p 5432 -t 30 -- /start.sh && python3 main.py' # use bash -c "command" because cd works only in shell
+    command: bash -c '/wait-for-it.sh -h postgredb_service -p 5432 -t 30 -- echo "database is up and accessible"' # use bash -c "command" because cd works only in shell
+    # do not forget to set CLRF to LF in shell script
     
-    
-    # will not start this container until listed containers are started. BUT N.B. - Postgre still needs some time to pass some checks before it is available.
+        # will not start this container until listed containers are started. BUT N.B. - Postgre still needs some time to pass some checks before it is available.
     depends_on:
       - postgredb_service 
       
