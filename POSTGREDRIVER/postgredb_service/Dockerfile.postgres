@@ -1,0 +1,17 @@
+FROM postgres:latest
+
+# updating packages
+RUN apt-get update && yes|apt-get upgrade
+
+# install postgresql-plpython3-13
+RUN apt install postgresql-plpython3-13 -y
+
+RUN apt install python3-pip -y 
+
+# this is essential for serching
+RUN pip3 install CGRtools StructureFingerprint
+
+# copy configfile for our database
+COPY ./configfiles/configfile /etc/postgresql/10/main/postgresql.conf
+COPY ./configfiles/configfile_2 /etc/postgresql/10/main/pg_hba.conf
+

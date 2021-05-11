@@ -1,0 +1,84 @@
+version: '3'
+
+services: 
+<<<<<<< HEAD
+  cgrdb:     # service name
+    container_name: cgrdb # container name
+    stdin_open: true # docker run -i ---> interactive attached terminal input
+    tty: true        # docker run -t    
+    build:
+      context: ".\\cgrdb"
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:         # docker run -v
+      - ".\\third_folder:/home"
+    ports:           # docker run -p
+      # - 8888:8888 # binds docker internal service to localhost:8888
+      - 5432:5432 # same by analogy  /my_script/file.sh
+    command: bash -c "cd /home && jupyter-notebook --ip=0.0.0.0 --allow-root" # use bash -c "command" because cd works only in shell
+    # && 
+  
+  # jupyter:
+  #   container_name: jupyter
+  #   stdin_open: true # docker run -i ---> interactive attached terminal input
+  #   tty: true        # docker run -t
+  #   build:
+  #     context: ".\\jupyter"
+  #     dockerfile: Dockerfile
+  #   volumes:         # docker run -v
+  #     - ".\\third_folder:/home"
+  #   ports:           # docker run -p
+  #     - 8888:8888 # binds docker internal service to localhost:8888
+  #   command: bash -c "cd /home && jupyter-notebook --ip=0.0.0.0 --allow-root" # use bash -c "command" because cd works only in shell
+  
+   
+
+        
+=======
+  postgredb_service:     # service name
+    container_name: postgredb_service # container name
+    stdin_open: true # docker run -i ---> interactive attached terminal input
+    tty: true        # docker run -t    
+    build:
+      context: ./postgredb_service
+      dockerfile: Dockerfile.postgres
+    restart: unless-stopped
+    ports:           # docker run -p
+      - 5432:5432 # same by analogy port binding as in driver service
+    environment: # command: bash -c "sudo -u postgres psql --command "ALTER USER postgres WITH PASSWORD 'secret';""
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: chemical_db
+      POSTGRES_HOST_AUTH_METHOD: trust
+  
+  driver_service:
+    container_name: driver_service
+    stdin_open: true # docker run -i ---> interactive attached terminal input
+    tty: true        # docker run -t    
+    build:
+      context: ./driver_service
+      dockerfile: Dockerfile.python-3.8-slim
+    restart: always
+    volumes:         # docker run -v
+      - ".\\driver_service\\jupyter_scripts:/home" # интерактивно менять скрипты не перезапуская контейнер
+    ports: 
+      - 8888:8888 # binds docker internal service to localhost:8888
+    # /wait-for-it.sh checks availability of service on some port, and then launches next command      cd /home && jupyter-notebook --ip=0.0.0.0 --allow-root'
+    command: bash -c '/wait-for-it.sh -h postgredb_service -p 5432 -t 30 -- /start.sh && python3 main.py' # use bash -c "command" because cd works only in shell
+    
+    
+    # will not start this container until listed containers are started. BUT N.B. - Postgre still needs some time to pass some checks before it is available.
+    depends_on:
+      - postgredb_service 
+      
+## psql "dbname=dbhere host=postgredb_service user=postgres password=secret port=5432 sslmode=require"
+#######################################################################################################################
+#######################################################################################################################
+## we need somehow to fix non criticacl issue of Key Error when stack is launched after it was once launched already:
+## Traceback (most recent call last):
+##  File "/usr/local/bin/cgrdb", line 8, in <module> sys.exit(launcher()) 
+##  File "/usr/local/lib/python3.8/site-packages/CGRdb/CLI/__init__.py", line 26, in launcher args.func(args)
+##  File "/usr/local/lib/python3.8/site-packages/CGRdb/CLI/main_create.py", line 48, in create_core 
+##  raise KeyError('schema already exists') KeyError:'schema already exists'
+##  wait-for-it.sh: waiting 30 seconds for postgredb_service:5432_wait-for-it.sh: postgredb_service:5432 is available after 0 seconds 
+>>>>>>> oleg-tests

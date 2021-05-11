@@ -1,0 +1,40 @@
+FROM python:3.8-slim
+
+# updating ubuntu packages
+RUN apt-get -y update && apt-get -y upgrade
+
+# install git for installing cgrdb from github
+RUN apt-get install git -y
+# Jupyter installation
+RUN pip3 install jupyter
+
+# Telegram-bot installation
+RUN pip3 install python-telegram-bot --upgrade
+
+# install CGRdb
+RUN pip3 install -U git+https://github.com/stsouko/CGRdb.git@master#egg=CGRdb
+
+# for pretty images of molecules
+RUN pip3 install -U CGRTools[clean2d]
+
+# install CGRdb_data
+RUN pip3 install -U git+https://github.com/pandylandy/CGRdbData.git@master#egg=CGRdbData
+
+# 
+RUN pip3 install CGRtools StructureFingerprint
+
+# 
+RUN mkdir db_config
+COPY ./configfiles/config.json /db_config
+
+# script for delaying setup until DB is ready (until its port is availaible)
+COPY ./bash_scripts/wait-for-it.sh /
+RUN chmod +x wait-for-it.sh
+
+# script for setiing up CGRbd is in 
+COPY ./bash_scripts/start.sh /
+# /wait-for-it.sh checks availability of service on some port, and then launches next command
+RUN chmod +x start.sh
+# ENTRYPOINT [ "/start.sh" ]
+
+COPY . . 

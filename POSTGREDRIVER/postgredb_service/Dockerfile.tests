@@ -1,0 +1,56 @@
+FROM ubuntu:latest
+
+# updating ubuntu packages
+RUN apt-get update && yes|apt-get upgrade
+# Adding wget and bzip2
+RUN apt-get install -y wget bzip2
+# Add sudo
+RUN apt-get -y install sudo
+RUN apt-get update
+
+# for keys
+RUN apt install gnupg -y
+RUN apt-get install wget ca-certificates -y
+RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+RUN apt-get install -y lsb-release && apt-get clean all
+RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+
+RUN apt-get update
+
+# install postgresql
+RUN apt install postgresql postgresql-plpython3-13 -y
+
+# install pip and git for installing cgrdb from github
+RUN apt install git -y \
+    && apt install python3-pip -y \
+    && pip3 install jupyter
+
+# install CGRdb
+RUN pip3 install -U git+https://github.com/stsouko/CGRdb.git@master#egg=CGRdb
+
+# install CGRdbData for work with addditional data in our CGRdb
+# RUN sudo pip3 install -U git+https://github.com/pandylandy/CGRdbData.git@master#egg=CGRdbData
+# at first copy config, then install CGRdbdata
+
+# for pretty images of molecules
+RUN pip3 install -U CGRTools[clean2d]
+
+# copy configfile for our database
+COPY ./configfiles/configfile /etc/postgresql/10/main/postgresql.conf
+COPY ./configfiles/configfile_2 /etc/postgresql/10/main/pg_hba.conf
+RUN mkdir my_config
+COPY ./configfiles/config.json /my_config
+
+# script for setiing up CGRbd is in 
+RUN mkdir my_script
+COPY ./file.sh /my_script
+
+# install CGRdb_data
+RUN pip3 install -U git+https://github.com/pandylandy/CGRdbData.git@master#egg=CGRdbData
+
+RUN sudo service postgresql start \
+    && sudo -u postgres psql --command "ALTER USER postgres WITH PASSWORD 'secret';" \
+    && sudo service postgresql restart \
+    && sudo pip3 install CGRtools StructureFingerprint \
+    && cgrdb init -c '{"host": "localhost", "password": "secret", "user": "postgres"}' \
+    && cgrdb create -c '{"host": "localhost", "password": "secret", "user": "postgres"}' -n 'schema_name' -f '/my_config/config.json'
